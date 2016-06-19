@@ -7,9 +7,9 @@
 
 #include "board.h"
 #include "computer.h"
+#include "Game.h"
 
 #include <iostream>
-#include <cstdlib>
 #include <limits>
 
 using namespace std;
@@ -32,14 +32,12 @@ void Computer::setSmart(int smartness) { this->smartness = smartness; }
 /**
  * Returns the next computer move based on the passed board and smartness level.
  */
-int Computer::getMove(Board &board) const {
+int Computer::getMove(Game& game, Board& board) const {
     switch (smartness) {
     case 1:
-        return notSoStupidMove(board);
-        break;
+        return notSoStupidMove(game, board);
     case 2:
-        return smartMove(board);
-        break;
+        return smartMove(game, board);
     case 0:
     default:
         return stupidMove(board);
@@ -56,30 +54,30 @@ int Computer::stupidMove(Board &board) const {
 /**
  * Returns a not so basic move.
  */
-int Computer::notSoStupidMove(Board &board) const {
-    int i; // No need to redeclare the for loop index every time
-
+int Computer::notSoStupidMove(Game& game, Board& board) const {
     // We'll also need this a few times
-    char computerLetter = board.getComputerLetter();
-    char playerLetter = board.getPlayerLetter();
+    char computerLetter = game.getComputerLetter();
+    char playerLetter = game.getPlayerLetter();
 
     // First, check if we can win in the next move
-    for (i = 0; i < 9; i++) {
+    for (int i = 0; i < 9; i++) {
         Board tempBoard(board);
-        if (tempBoard.isEmpty(i)) {
+        if (tempBoard.placeEmpty(i)) {
             tempBoard.setPlace(i, computerLetter);
-            if (tempBoard.isWinner(computerLetter)) {
+            if (game.isWinner(computerLetter, board)) {
                 return i;
             }
         }
     }
 
     // Check if the player could win on his next move, and block them.
-    for (i = 0; i < 9; i++) {
+    for (int i = 0; i < 9; i++) {
         Board tempBoard(board);
-        if (tempBoard.isEmpty(i)) {
+
+        if (tempBoard.placeEmpty(i)) {
             tempBoard.setPlace(i, playerLetter);
-            if (tempBoard.isWinner(playerLetter)) {
+
+            if (game.isWinner(playerLetter, tempBoard)) {
                 return i;
             }
         }
@@ -99,7 +97,7 @@ int Computer::notSoStupidMove(Board &board) const {
     }
 
     // Try to take the center, if it is free.
-    if (board.isEmpty(4)) {
+    if (board.placeEmpty(4)) {
         return 4;
     }
 
@@ -113,20 +111,21 @@ int Computer::notSoStupidMove(Board &board) const {
  * "Artificial Intelligence for Games, 2nd edition", by Ian Millington and
  * John Funge.
  */
-int Computer::smartMove(Board &board) const {
+int Computer::smartMove(Game& game, Board& board) const {
     // When calling minimax for the first time, the computer is always the
     // player
-    minimaxresult res = minimax(board, board.getComputerLetter(), 0, 100000);
+    minimaxresult res = minimax(board, game.getComputerLetter(), 0, 100000);
 
     return res.bestMove;
 }
 
-minimaxresult Computer::minimax(Board &board, char player, int currentDepth,
+minimaxresult Computer::minimax(Board& board, char player, int currentDepth,
                                 int maxDepth) const {
     minimaxresult res;
 
     // Check if we're done recursing
-    if (board.isWinner(board.getCurrentPlayer()) || currentDepth == maxDepth) {
+//    if (Game::isWinner(game.getCurrentPlayer(), board) || currentDepth == maxDepth) {
+    if (Game::isWinner(player, board) || currentDepth == maxDepth) {
         res.bestMove = NULL;
         res.bestScore = board.evaluate(player);
         return res;
@@ -136,18 +135,18 @@ minimaxresult Computer::minimax(Board &board, char player, int currentDepth,
     int bestMove = -1, bestScore = 0, currentScore, currentMove;
 
     // Assuming numeric_limits<int>::has_infinity is true
-    if (board.getCurrentPlayer() == player)
+//    if (game.getCurrentPlayer() == player)
+    if (player == 'X')
         bestScore = -std::numeric_limits<int>::infinity();
     else
         bestScore = std::numeric_limits<int>::infinity();
 
     // Go through each move
-    std::vector<int> possibleMoves;
-    board.getPossibleMoves(possibleMoves);
+    std::vector<int> possibleMoves = board.getPossibleMoves();
     std::vector<int>::iterator move;
     for (move = possibleMoves.begin(); move < possibleMoves.end(); move++) {
         Board newBoard(board);
-        newBoard.makeMove(*move);
+        newBoard.setPlace(*move, player);
 
         // Recurse
         res = minimax(newBoard, player, maxDepth, currentDepth + 1);
@@ -155,7 +154,8 @@ minimaxresult Computer::minimax(Board &board, char player, int currentDepth,
         currentMove = res.bestMove;
 
         // Update the best score
-        if (board.getCurrentPlayer() == player) {
+//        if (game.getCurrentPlayer() == player) {
+        if (player == 'X') {
             if (currentScore > bestScore) {
                 bestScore = currentScore;
                 bestMove = *move;

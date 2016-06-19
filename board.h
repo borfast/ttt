@@ -1,39 +1,35 @@
-#ifndef _BOARD_H
-#define _BOARD_H
+#ifndef TTT_BOARD_H
+#define TTT_BOARD_H
 
 #include <vector>
 
 class Board {
-  private:
+private:
     // The board representation
     char board[9];
 
-    // The letter for each player
-    char playerLetter, computerLetter, currentPlayer;
+public:
+    static const char EMPTY_PLACE = ' ';
 
-  public:
     Board();
-    Board(Board &oldBoard);
-    void draw();
+
+    Board(const Board &oldBoard);
+
     void reset();
-    void setLetters(char playerLetter);
-    const char &getPlayerLetter() const;
-    const char &getComputerLetter() const;
 
-    const char &getCurrentPlayer() const;
-    void setCurrentPlayer(char player);
+    bool placeEmpty(int place) const;
 
-    bool isEmpty(int place) const;
-    // const char& getPlace(int place) const;
+    const char &getPlace(int place) const;
+
     void setPlace(int place, char value);
-    void makeMove(int place);
 
-    void getPossibleMoves(std::vector<int> &possibleMoves) const;
+    std::vector<int> getPossibleMoves() const;
+
     const int getRandomMoveFromList(const int list[], int listSize) const;
 
-    bool isWinner(const char player) const;
     bool isFull() const;
+
     int evaluate(const char &player) const;
 };
 
-#endif /* _BOARD_H */
+#endif /* TTT_BOARD_H */
